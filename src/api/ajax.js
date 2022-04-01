@@ -1,12 +1,6 @@
 // 对axios进行二次封装
 import axios from 'axios'
 
-// 引入进度条
-import nprogress from 'nprogress'
-// start():进度条开始  done():进度条结束
-// 引入进度条样式
-import 'nprogress/nprogress.css'
-
 // 引入store仓库
 import store from '@/store'
 
@@ -23,8 +17,6 @@ const requests = axios.create({
 // 请求拦截器：在请求发出前，做一些事情
 requests.interceptors.request.use((config) => {
   // config:配置对象，其中有一个属性，headers请求头
-  // 进度条开始动
-  nprogress.start()
   // 需要携带token给服务器
   if (store.state.user.token) {
     config.headers.token = store.state.user.token
@@ -36,8 +28,6 @@ requests.interceptors.request.use((config) => {
 requests.interceptors.response.use(
   (res) => {
     // 成功的回调函数
-    // 进度条结束
-    nprogress.done()
     return res.data
   },
   (err) => {

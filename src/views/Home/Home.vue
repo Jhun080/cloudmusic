@@ -8,31 +8,31 @@
     <!-- 圆形图标 -->
     <div class="func-nav">
       <div class="round-icon">
-        <div class="icon">
+        <div class="icon" @click="tipInfo">
           <img src="@/assets/home/songrcmd.png">
         </div>
         <div class="title">每日推荐</div>
       </div>
       <div class="round-icon">
-        <div class="icon">
+        <div class="icon" @click="tipInfo">
           <img src="@/assets/home/privatefm.png">
         </div>
         <div class="title">私人FM</div>
       </div>
       <div class="round-icon">
-        <div class="icon">
+        <div class="icon" @click="tipInfo">
           <img src="@/assets/home/playlistCollection.png">
         </div>
         <div class="title">歌单</div>
       </div>
       <div class="round-icon">
-        <div class="icon">
+        <div class="icon" @click="tipInfo">
           <img src="@/assets/home/rank.png">
         </div>
         <div class="title">排行榜</div>
       </div>
       <div class="round-icon">
-        <div class="icon">
+        <div class="icon" @click="tipInfo">
           <img src="@/assets/home/album.png">
         </div>
         <div class="title">数字专辑</div>
@@ -48,12 +48,30 @@
     </SongShowZone>
     <!-- 分割线 -->
     <van-divider />
+
+    <!-- 测试 -->
+    <SongShowZone
+      title="推荐歌单"
+      :songDatas="recommendSongSheet"
+      >
+    </SongShowZone>
+    <!-- 分割线 -->
+    <van-divider />
+    <!-- 测试 -->
+    <SongShowZone
+      title="推荐歌单"
+      :songDatas="recommendSongSheet"
+      >
+    </SongShowZone>
+    <!-- 分割线 -->
+    <van-divider />
   </div>
 </template>
 
 <script>
 import Carousel from '@/components/Carousel/Carousel'
 import SongShowZone from '@/components/SongShowZone/SongShowZone.vue'
+import { Toast } from 'vant'
 
 export default {
   name: 'home',
@@ -100,6 +118,9 @@ export default {
       if (result.code === 200) {
         this.recommendSongSheet = result.result
       }
+    },
+    tipInfo () {
+      Toast('开发中')
     }
   }
 }
