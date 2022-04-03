@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-// import store from '@/store/index.js'
+import store from '@/store/index.js'
 
 Vue.use(VueRouter)
 
@@ -65,6 +65,29 @@ VueRouter.prototype.replace = function (location, resolve, reject) {
 const router = new VueRouter({
   // mode: 'history',
   routes
+})
+
+// 全局守卫：前置守卫（在路由跳转之前进行判断）
+router.beforeEach(async (to, from, next) => {
+  // to:可以获取到要跳转到的路由信息
+  // from:可以获取到正要离开的路由的信息
+  // next:放行函数 next()放行  next(path):放行到指定的路由
+  // next(false)重置到from路由对应的地址  next至少要执行一次
+
+  // 获取用户信息
+  const userInfo = store.state.user.userInfo
+  try {
+    // userInfo.userId
+    if (userInfo.getInfoFlag) {
+      // 说明刷新后，用户信息重置了，需要重新获取用户信息
+      // 用户信息不存在，获取
+      await store.dispatch('getUserInfo')
+    }
+  } catch (error) {
+    alert(error)
+  }
+  // 放行
+  next()
 })
 
 export default router
