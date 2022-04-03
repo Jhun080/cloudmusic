@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <!-- 头部菜单栏 -->
-    <Header></Header>
+    <Header v-show="$route.meta.showHeader==true"></Header>
     <div class="main-nav">
       <keep-alive>
         <router-view></router-view>
