@@ -15,7 +15,8 @@
           <img :src="props.active ? icon.podcast.active : icon.podcast.inactive" class="icon"/>
         </template>
       </van-tabbar-item>
-      <van-tabbar-item to="/homepage">
+      <!-- to="/homepage"  -->
+      <van-tabbar-item to='/homepage'>
         <span>我的</span>
         <template slot="icon" slot-scope="props">
           <img :src="props.active ? icon.my.active : icon.my.inactive" class="icon"/>
@@ -53,6 +54,13 @@ export default {
     // 跳转至播客
     toPodcast () {
       Toast('正在开发中')
+    },
+    // 跳转至我的
+    toHomepage () {
+      this.$router.push('/homepage')
+    },
+    test () {
+      Toast('我的')
     }
   }
 }
