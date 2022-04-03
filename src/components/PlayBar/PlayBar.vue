@@ -28,13 +28,11 @@
 </template>
 
 <script>
+import { Toast } from 'vant'
 export default {
   name: 'PlayBar',
   data () {
     return {
-      // 播放速度
-      playSpeed: 100,
-      currentRate: 1,
       // 播放状态
       palyState: 'suspend',
       // 歌曲信息
@@ -73,6 +71,8 @@ export default {
     }
   },
   mounted () {
+    // 注册自定义事件(汇总)
+    this.registerEvent()
     // 获取一首音乐(临时)
     this.getSongURL()
     // 获取音乐详情(临时)
@@ -88,13 +88,9 @@ export default {
       if (this.palyState === 'suspend') {
         // 暂停播放
         this.pause()
-        // 暂停进度条转动
-        this.playSpeed = 0
       } else {
         // 开始播放
         this.play()
-        // 开启进度条转动
-        this.playSpeed = 1
       }
     },
     // 开始播放
@@ -133,6 +129,34 @@ export default {
       if (result.code) {
         this.songDetail = result
       }
+    },
+    // 通过音乐id播放音乐
+    async playMusicById (songId) {
+      try {
+        if (this.palyState !== 'suspend') {
+          // 如果当前播放器正在播放
+          // 首先暂停播放(会清空计时器)
+          this.playSong()
+        }
+        // 获取音乐详情
+        await this.getSongDetail(songId)
+        // 获取一首音乐(临时)
+        await this.getSongURL(songId)
+        // 开始播放音乐
+        this.playSong()
+      } catch (error) {
+        console.log(error)
+        Toast('播放失败，刷新一下吧')
+      }
+    },
+    // 注册自定义事件(汇总)
+    registerEvent () {
+      // 订阅来自表单的播放音乐事件
+      this.$bus.$on('playMusic', (songId) => {
+        console.log('播放音乐ID：', songId)
+        // 播放音乐操作
+        this.playMusicById(songId)
+      })
     }
   }
 
@@ -181,7 +205,14 @@ export default {
     }
 
     .song-title{
+      max-width: 50vw;
       font-size: 10px;
+      //超过一行显示省略号
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
     }
 
     .button-nav{
