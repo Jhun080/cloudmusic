@@ -75,18 +75,23 @@
 
 <script>
 import { Toast } from 'vant'
+import { mapState } from 'vuex'
 
 export default {
   name: 'SongSheetDetail',
   data () {
     return {
       // 歌单信息
-      songSheetData: {
-        creator: {}
-      }
+      // songSheetData: {
+      //   creator: {}
+      // }
     }
   },
   computed: {
+    ...mapState({
+      // 歌单详情
+      songSheetData: state => state.song.songSheetData
+    }),
     // 歌单id
     songSheetId () {
       return this.$route.params.songsheetid
@@ -116,10 +121,8 @@ export default {
     },
     // 获取歌单详情
     async getSongSheetDetail () {
-      const result = await this.$API.reqGetSongSheetDetail(this.songSheetId)
-      if (result.code === 200) {
-        this.songSheetData = result.playlist
-      }
+      // vuex获取歌单详情
+      this.$store.dispatch('getSongSheetList', this.songSheetId)
     },
     // 返回上一个url
     routeBack () {

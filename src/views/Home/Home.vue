@@ -95,7 +95,7 @@ export default {
     // 获取圆形图标数据
     this.getBallData()
     // 获取推荐歌单数据
-    this.getRecommendSongSheet(3)
+    this.getRecommendSongSheet(6)
   },
   methods: {
     // 获取首页轮播图数据
@@ -121,6 +121,11 @@ export default {
     },
     tipInfo () {
       Toast('开发中')
+    },
+    // 跳转至我的
+    toHomepage () {
+      Toast('点击了')
+      this.$router.push('/homepage')
     }
   }
 }
