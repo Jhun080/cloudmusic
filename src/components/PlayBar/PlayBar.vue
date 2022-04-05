@@ -11,7 +11,11 @@
         <!-- 歌曲封面 -->
         <img :src="songIcon" class="song-icon">
         <!-- 歌曲名 -->
-        <div class="song-title">{{ songName }} - {{ songer.name }}</div>
+        <div class="song-title" @click="showPlayDetail">{{ songName }} -&nbsp;
+          <span class="author" v-for="(author,index) in songer" :key="author.id">
+            {{ index == 0 ? '' : '/' }} {{ author.name }}
+          </span>
+        </div>
         <!-- 播放器按钮 -->
         <div class="button-nav">
           <div class="button">
@@ -64,6 +68,60 @@
         </div>
       </van-popup>
     </div>
+
+    <!-- 播放详情弹窗，全屏 -->
+    <div class="playdetail-nav">
+      <van-popup v-model="playDetailVisible" position="bottom">
+        <div class="detail-nav">
+          <!-- 顶部区域 -->
+          <div class="header-nav">
+            <img :src="require('@/assets/player/down.png')" class="down-icon" @click="playDetailVisible=false">
+            <div class="song-info">
+              <!-- 歌曲名 -->
+              <div class="title">{{ songName }}</div>
+              <!-- 作者 -->
+              <div class="author-nav">
+                <span class="author" v-for="(author,index) in songer" :key="author.id">
+                  {{ index == 0 ? '' : '/' }} {{ author.name }}
+                </span>
+              </div>
+            </div>
+            <img :src="require('@/assets/player/share.png')" class="share-icon">
+          </div>
+          <!-- 中部区域 -->
+          <div class="center-nav">
+            <div :class="{'songicon':true,'suspend':palyState=='suspend'}">
+              <img :src="songIcon">
+            </div>
+
+          </div>
+          <!-- 底部区域 -->
+          <div class="footer-nav">
+            <!-- 进度条区域 -->
+            <div class="progressbar-nav">
+              <!-- 当前播放时间 -->
+              <div class="nowtime">{{ formateTime(currentTime*1000) }}</div>
+              <div class="progressbar">
+                <mt-range
+                  v-model="currentTime" :min=0 :max="songTime/1000" :barHeight=2 @input="changeCurrentTimeFirst" @change="changeCurrentTimeSecond">
+                </mt-range>
+              </div>
+              <!-- 当前歌曲总时间 -->
+              <div class="totaltime">{{ formateTime(songTime) }}</div>
+            </div>
+            <!-- 按钮区域 -->
+            <div class="button-nav">
+              <img :src="require('@/assets/player/loopPlayBig.png')" class="normal-icon">
+              <img :src="require('@/assets/player/lastBig.png')" class="normal-icon" @click="playLastSong">
+              <img :src="require(`@/assets/player/${palyState=='suspend'?'suspend':'play'}Big.png`)" class="big-icon" @click="playSong">
+              <img :src="require('@/assets/player/nextBig.png')" class="normal-icon" @click="playNextSong">
+              <img :src="require('@/assets/player/playlistBig.png')" class="normal-icon" @click="showSongPlayList">
+            </div>
+          </div>
+        </div>
+      </van-popup>
+    </div>
+
   </div>
 
 </template>
@@ -76,17 +134,20 @@ export default {
   name: 'PlayBar',
   data () {
     return {
+      value: 25540,
+      // 标记是否展示播放详情页面
+      playDetailVisible: false,
       // 标记是否展示播放列表
       showPlayList: false,
       // 播放类型 单曲:single  随机:random  循环:loop
       playType: 'loop',
-      // 播放状态
+      // 播放状态  暂停:suspend  播放:play
       palyState: 'suspend',
       // 歌曲资源URL
       songURL: '',
       // 歌曲详情
       songDetail: { },
-      // 歌曲时长
+      // 歌曲时长(毫秒)
       songTime: 0,
       // 歌曲封面
       songIcon: '',
@@ -94,12 +155,12 @@ export default {
       songName: '',
       // 歌手信息
       songer: {},
-      // 当前播放进度
+      // 当前播放时间进度(秒)
       currentTime: 0,
       // 记录定时器
       timerId: null,
       // 当前播放歌曲id
-      playingSongId: ''
+      playingSongId: '1933997277'
     }
   },
   watch: {
@@ -110,7 +171,7 @@ export default {
         this.songTime = val.songs[0].dt || 0
         this.songIcon = val.songs[0].al.picUrl || ''
         this.songName = val.songs[0].name || ''
-        this.songer = val.songs[0].ar[0] || {}
+        this.songer = val.songs[0].ar || []
       }
     }
   },
@@ -119,6 +180,7 @@ export default {
       // 当前播放列表
       playSongList: state => state.song.playSongList
     }),
+    // 进度条进度
     circleRate () {
       return Math.floor(this.currentTime / (this.songTime / 1000) * 100) || 0.5
     }
@@ -135,6 +197,10 @@ export default {
     this.getPlaySongList()
   },
   methods: {
+    // 展示播放详情页
+    showPlayDetail () {
+      this.playDetailVisible = true
+    },
     // 播放列表上一首歌曲
     playLastSong () {
       // 获取播放列表长度
@@ -255,6 +321,19 @@ export default {
         this.songDetail = result
       }
     },
+    // 修改当前播放的音乐的进度(First，滑动进度条时)
+    changeCurrentTimeFirst () {
+      // 首先销毁计时器
+      clearInterval(this.timerId)
+      this.timerId = null
+    },
+    // 修改当前播放的音乐的进度(Second，放开滑块时)
+    changeCurrentTimeSecond () {
+      // 修改播放器audio当前进度
+      this.$refs.audio.currentTime = this.currentTime
+      // 启动定时器，开始播放
+      this.play()
+    },
     // 播放音乐(在播放列表中点击)
     playMusic (song) {
       if (song.fee === 1) {
@@ -301,6 +380,10 @@ export default {
         // 播放音乐操作
         this.playMusicById(songId)
       })
+    },
+    // 时间转换
+    formateTime (time) {
+      return this.$dayjs(time).format('mm:ss')
     }
   }
 
@@ -515,6 +598,168 @@ export default {
   }
 }
 
+.playdetail-nav{
+  width: 100%;
+  height: 100%;
+  width: 100%;
+
+  .van-popup--bottom {
+    height: 100%;
+
+    .detail-nav{
+      width: 100%;
+      height: 100%;
+      //background-color: rgb(125,125,123);
+      background-color: rgb(131,123,110);
+
+      .header-nav{
+        position: relative;
+        display: flex;
+        flex-wrap: nowrap;
+        justify-content: space-around;
+        align-items: center;
+        width: 100%;
+        height: 45px;
+        //background-color: rgb(19, 212, 226);
+
+        .down-icon{
+          position: absolute;
+          left: 15px;
+          width: 22px;
+          height: 22px;
+        }
+
+        .song-info{
+          display: flex;
+          flex-wrap: wrap;
+          align-content: center;
+          text-align: center;
+
+          .title{
+            width: 100%;
+            font-size: 14px;
+            color: white;
+          }
+
+          .author-nav{
+            width: 100%;
+            font-size: 10px;
+            color: rgb(223, 217, 217);
+          }
+        }
+
+        .share-icon{
+          position: absolute;
+          right: 15px;
+          width: 22px;
+          height: 22px;
+        }
+
+      }
+
+      .center-nav{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: calc(100% - 135px) ;
+        //background-color: aquamarine;
+
+        .songicon{
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          width: 75vw;
+          height: 75vw;
+          background-image: url('~@/assets/player/disc1.png');
+          background-size:100%;
+          border-radius: 50%;
+          animation: imgRotate 20s linear infinite;
+          img{
+            width: 50vw;
+            height: 50vw;
+            border-radius: 50%;
+          }
+        }
+
+        .songicon.suspend{
+
+          animation-play-state: paused;
+        }
+
+      }
+
+      .footer-nav{
+        position: absolute;
+        bottom: 0px;
+        width: 100%;
+        height: 90px;
+        //background-color: rgb(211, 219, 216);
+
+        .progressbar-nav{
+          display: flex;
+          flex-wrap: nowrap;
+          justify-content: space-around;
+          align-items: center;
+
+          .nowtime{
+            font-size: 10px;
+            color: rgb(223, 217, 217);
+          }
+
+          .progressbar{
+            width: 70vw;
+            /deep/.mt-range-content{
+              left: 10px;
+            }
+            /deep/.mt-range-runway{
+              right: -10px;
+            }
+            /deep/.mt-range-progress{
+              background-color: rgb(5,170,192);
+            }
+            /deep/.mt-range-thumb{
+              width: 10px;
+              height: 10px;
+
+              top: 8px;
+              box-shadow: none;
+              border: 2px solid rgb(5,170,192);
+            }
+          }
+
+          .totaltime{
+            font-size: 10px;
+            color: rgb(223, 217, 217);
+          }
+
+        }
+
+        .button-nav{
+          display: flex;
+          flex-wrap: nowrap;
+          justify-content: center;
+          align-items: center;
+
+          .normal-icon{
+            width: 20px;
+            height: 20px;
+            margin: 0px 20px;
+          }
+
+          .big-icon{
+            width: 40px;
+            height: 40px;
+          }
+        }
+
+      }
+    }
+
+  }
+
+}
+
 //动画事件：背景色转换(悬浮时)
 @keyframes hoverColorChangeBegin{
   0%{
@@ -525,4 +770,13 @@ export default {
   }
 }
 
+//动画事件：图片自转
+@keyframes imgRotate{
+  from {
+    -webkit-transform: rotate(0deg);
+  }
+  to {
+    -webkit-transform: rotate(360deg);
+  }
+}
 </style>
