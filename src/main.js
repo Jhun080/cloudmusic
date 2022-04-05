@@ -16,6 +16,11 @@ import dayjs from 'dayjs'
 // 统一接收api文件夹中的全部请求函数
 import API from '@/api/index.js'
 
+// mint-ui
+import { Range } from 'mint-ui'
+import 'mint-ui/lib/style.css'
+Vue.component(Range.name, Range)
+
 Vue.use(Vant)
 Vue.use(ElementUI)
 
