@@ -129,6 +129,7 @@
 <script>
 import { Toast } from 'vant'
 import { mapState } from 'vuex'
+import _ from 'lodash'
 
 export default {
   name: 'PlayBar',
@@ -160,7 +161,9 @@ export default {
       // 记录定时器
       timerId: null,
       // 当前播放歌曲id
-      playingSongId: '1933997277'
+      playingSongId: 1933997277,
+      // 当前播放歌单id
+      playingSongSheetId: 7360210135
     }
   },
   watch: {
@@ -174,6 +177,7 @@ export default {
         this.songer = val.songs[0].ar || []
       }
     }
+
   },
   computed: {
     ...mapState({
@@ -189,12 +193,12 @@ export default {
     // 注册自定义事件(汇总)
     this.registerEvent()
     // 获取一首音乐(临时)
-    this.getSongURL()
+    this.getSongURL(this.playingSongId)
     // 获取音乐详情(临时)
-    this.getSongDetail()
+    this.getSongDetail(this.playingSongId)
 
-    // 获取当前播放列表(当前id是固定的)
-    this.getPlaySongList()
+    // 通过歌单id获取当前播放列表
+    this.getPlaySongList(this.playingSongSheetId)
   },
   methods: {
     // 展示播放详情页
@@ -202,7 +206,7 @@ export default {
       this.playDetailVisible = true
     },
     // 播放列表上一首歌曲
-    playLastSong () {
+    playLastSong: _.throttle(function () {
       // 获取播放列表长度
       const size = this.playSongList.length
       // 查询当前播放的音乐在列表中的位置
@@ -231,9 +235,10 @@ export default {
       }
       // 播放音乐
       this.playMusic(this.playSongList[nowPlayingIndex])
-    },
+    }, 1000),
+
     // 播放列表下一首歌曲
-    playNextSong () {
+    playNextSong: _.throttle(function () {
       // 获取播放列表长度
       const size = this.playSongList.length
       // 查询当前播放的音乐在列表中的位置
@@ -242,7 +247,7 @@ export default {
         if (item.id === this.playingSongId) {
           nowPlayingIndex = index
         }
-      })
+      }, 1000, { leading: true, trailing: false })
       nowPlayingIndex++
       // 判断是否超出播放列表范围，和是不是vip歌曲
       while (1) {
@@ -262,13 +267,12 @@ export default {
       }
       // 播放音乐
       this.playMusic(this.playSongList[nowPlayingIndex])
-    },
-    // 播放音乐
-    playSong () {
-      // 修改播放状态
-      this.palyState = this.palyState === 'suspend' ? 'play' : 'suspend'
-      // console.log(this.getCurrentTime())
+    }, 1000),
 
+    // 播放音乐
+    playSong: _.throttle(function () {
+      // 修改播放状态
+      this.palyState = this.$refs.audio.paused === true ? 'play' : 'suspend'
       if (this.palyState === 'suspend') {
         // 暂停播放
         this.pause()
@@ -276,7 +280,9 @@ export default {
         // 开始播放
         this.play()
       }
-    },
+      // console.log(this.$refs.audio.paused)
+    }, 500),
+
     // 开始播放
     play () {
       this.$refs.audio.play()
@@ -368,17 +374,32 @@ export default {
     showSongPlayList () {
       this.showPlayList = true
     },
-    // 获取当前播放列表
-    getPlaySongList () {
-      this.$store.dispatch('getSongDetailBySongIds', 7360210135)
+    // 通过歌单id获取当前播放列表
+    async getPlaySongList (songSheetId = 7360210135) {
+      await this.$store.dispatch('getSongDetailBySongIds', songSheetId)
     },
     // 注册自定义事件(汇总)
     registerEvent () {
-      // 订阅来自表单的播放音乐事件
+      // 订阅来自歌单详情页的播放音乐事件
       this.$bus.$on('playMusic', (songId) => {
-        console.log('播放音乐ID：', songId)
+        // console.log('播放音乐ID：', songId)
         // 播放音乐操作
         this.playMusicById(songId)
+      })
+
+      // 订阅来自歌单详情页的播放全部音乐事件
+      // songSheetId:当前歌单id，index播放歌单的第几首歌,默认为第1首
+      this.$bus.$on('playAllSongBySheetId', async (songSheetId, playIndex = 1) => {
+        // console.log('播放歌单ID：', songSheetId)
+        // 更新当前播放歌单id
+        this.playingSongSheetId = songSheetId
+        // 通过歌单id获取当前播放列表
+        await this.getPlaySongList(this.playingSongSheetId)
+        // 更新当前播放歌曲id
+        this.playingSongId = this.playSongList[playIndex - 1].id
+        // console.log(this.playingSongId)
+        // 播放音乐操作
+        this.playMusicById(this.playingSongId)
       })
     },
     // 时间转换
@@ -538,12 +559,6 @@ export default {
       width: 100%;
       background-color: white;
       transition: all .5s;
-      //超过一行显示省略号
-      overflow: hidden;
-      text-overflow: ellipsis;
-      display: -webkit-box;
-      -webkit-box-orient: vertical;
-      -webkit-line-clamp: 1;
 
       .songinfo-nav{
         display: flex;
@@ -554,6 +569,12 @@ export default {
 
         .songname{
           font-size: 15px;
+          //超过一行显示省略号
+          overflow: hidden;
+          text-overflow: ellipsis;
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 1;
         }
         .songname.playing{
           color:rgb(5,170,192)
@@ -564,6 +585,12 @@ export default {
           top: 1px;
           font-size: 1px;
           color: rgb(112,112,112);
+          //超过一行显示省略号
+          overflow: hidden;
+          text-overflow: ellipsis;
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 1;
         }
         .author-nav.playing{
           color:rgb(5,170,192)
@@ -586,6 +613,7 @@ export default {
           right: 0px;
           width: 16px;
           height: 16px;
+          background-color: white;
         }
       }
 

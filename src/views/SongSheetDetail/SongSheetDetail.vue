@@ -44,8 +44,8 @@
     </div>
     <!-- 歌曲数据 -->
     <div class="songlist-nav">
-      <div class="playall"><img :src="require('@/assets/songsheet/playAll.png')" />播放全部</div>
-      <div class="songinfo" v-for="(song, index) in songSheetData.tracks" :key="song.id" @click="playMusic(song)">
+      <div class="playall" @click="playAllSong"><img :src="require('@/assets/songsheet/playAll.png')"/>播放全部</div>
+      <div class="songinfo" v-for="(song, index) in songSheetData.tracks" :key="song.id" @click="playMusic(song,index)">
         <div class="song-index">
           {{ index + 1 }}
         </div>
@@ -111,23 +111,34 @@ export default {
   },
   methods: {
     // 播放音乐
-    playMusic (song) {
+    playMusic (song, index = 1) {
       if (song.fee === 1) {
         Toast('暂时不支持播放VIP歌曲')
       } else {
         // 通知底部播放栏播放音乐
-        this.$bus.$emit('playMusic', song.id)
+        // 参数：歌单id，从第index首开始播放
+        this.$bus.$emit('playAllSongBySheetId', this.songSheetId, index + 1)
       }
     },
+
+    // 播放当前列表全部音乐
+    playAllSong () {
+      // 通知播放器播放当前列表全部音乐
+      // 参数：歌单id
+      this.$bus.$emit('playAllSongBySheetId', this.songSheetId)
+    },
+
     // 获取歌单详情
     async getSongSheetDetail () {
       // vuex获取歌单详情
       this.$store.dispatch('getSongSheetList', this.songSheetId)
     },
+
     // 返回上一个url
     routeBack () {
       this.$router.go(-1)
     },
+
     // 处理数字的显示
     handleNum (num) {
       const front = Math.floor(num / 100000)
@@ -137,6 +148,7 @@ export default {
         return num
       }
     },
+
     // 空白事件阻止手机浏览器预览事件
     preventTouch () {
 
@@ -336,7 +348,7 @@ export default {
           text-overflow: ellipsis;
           display: -webkit-box;
           -webkit-box-orient: vertical;
-          -webkit-line-clamp: 2;
+          -webkit-line-clamp: 1;
         }
         .song-author {
           display: flex;

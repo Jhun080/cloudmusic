@@ -49,10 +49,10 @@
     <!-- 分割线 -->
     <van-divider />
 
-    <!-- 测试 -->
+    <!-- 热门歌单 -->
     <SongShowZone
-      title="推荐歌单"
-      :songDatas="recommendSongSheet"
+      title="网友精选"
+      :songDatas="topSongSheet"
       >
     </SongShowZone>
     <!-- 分割线 -->
@@ -86,7 +86,9 @@ export default {
       // 获取圆形图标
       ballData: [],
       // 推荐歌单数据
-      recommendSongSheet: []
+      recommendSongSheet: [],
+      // 网友精选歌单数据
+      topSongSheet: []
     }
   },
   mounted () {
@@ -96,6 +98,8 @@ export default {
     this.getBallData()
     // 获取推荐歌单数据
     this.getRecommendSongSheet(6)
+    // 获取网友精选歌单数据
+    this.getTopSongSheet(6)
   },
   methods: {
     // 获取首页轮播图数据
@@ -117,6 +121,16 @@ export default {
       const result = await this.$API.reqGetRecommendSongSheet(limit)
       if (result.code === 200) {
         this.recommendSongSheet = result.result
+      }
+    },
+    // 获取网友精选歌单数据
+    async getTopSongSheet (limit = 6) {
+      const result = await this.$API.reqGetTopSongSheet(limit)
+      if (result.code === 200) {
+        result.playlists.forEach(item => {
+          item.picUrl = item.coverImgUrl
+        })
+        this.topSongSheet = result.playlists
       }
     },
     tipInfo () {

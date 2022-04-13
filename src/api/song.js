@@ -15,6 +15,37 @@ export const reqGetRecommendSongSheet = (limit = 6) => {
 }
 
 /*
+  获取热门歌单
+  /playlist/hot
+  get
+  参数: ?limit=1 取出数量
+*/
+export const reqGetHotSongSheet = () => {
+  const time = new Date().getTime()
+  return requests({
+    url: `/playlist/hot?timestamp=${time}`,
+    method: 'get'
+  })
+}
+
+/*
+  获取网友精选歌单
+  /top/playlist
+  get
+  参数: ?limit=1 取出数量
+  cat: tag, 比如 " 华语 "、" 古风 " 默认为 "全部"
+  limit: 取出歌单数量 , 默认为 50
+  offset: 偏移数量 , 用于分页
+  */
+export const reqGetTopSongSheet = (limit = 10) => {
+  const time = new Date().getTime()
+  return requests({
+    url: `/top/playlist?limit=${limit}&timestamp=${time}`,
+    method: 'get'
+  })
+}
+
+/*
   通过歌曲ID获取歌曲路径
   /song/url?id=
   get
